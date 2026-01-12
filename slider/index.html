@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GitHub Auto Image Slider (No Crop)</title>
+<title>GitHub Auto Image Slider (Best Fit)</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
@@ -22,22 +22,20 @@ body {
   overflow: hidden;
 }
 
-/* ===== Slider ===== */
 .slider {
   position: relative;
   width: 100vw;
   height: 100vh;
-  background-color: #1f1819; /* 圖片留白底色 */
-  overflow: hidden;
+  background-color: #1e1718; /* 圖片比例不足時的填補底色 */
 }
 
 .slide {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.4s ease-in-out;
 
-  /* 核心設定：不裁切 */
+  /* 🔑 核心設定 */
   background-repeat: no-repeat;
   background-position: center center;
   background-size: contain;
@@ -47,7 +45,6 @@ body {
   opacity: 1;
 }
 
-/* ===== Buttons ===== */
 .buttons button#prev {
   position: absolute;
   top: 50%;
@@ -89,18 +86,18 @@ body {
 </div>
 
 <script>
-/* ========= 必填設定 ========= */
-const GITHUB_OWNER = "你的GitHub帳號";
-const GITHUB_REPO  = "你的repo名稱";
+/* ========= 請修改這三個 ========= */
+const GITHUB_OWNER = "miro2874";
+const GITHUB_REPO  = "notion_widgets";
 const IMAGE_FOLDER = "slider";
-/* ============================ */
+/* ================================= */
 
 const slider = document.getElementById("slider");
 const intervalTime = 5000;
 let slideInterval;
 let slides = [];
 
-/* 讀取 GitHub 圖片 */
+/* 從 GitHub 讀取圖片 */
 async function loadImagesFromGitHub() {
   const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${IMAGE_FOLDER}`;
   const res = await fetch(apiUrl);
@@ -124,7 +121,7 @@ async function loadImagesFromGitHub() {
   startAutoSlide();
 }
 
-/* ===== Slider Logic ===== */
+/* 幻燈片控制 */
 function nextSlide() {
   const current = document.querySelector(".slide.current");
   current.classList.remove("current");
@@ -146,7 +143,7 @@ function resetInterval() {
   slideInterval = setInterval(nextSlide, intervalTime);
 }
 
-/* Buttons */
+/* 按鈕事件 */
 document.getElementById("next").addEventListener("click", () => {
   nextSlide();
   resetInterval();
@@ -157,7 +154,14 @@ document.getElementById("prev").addEventListener("click", () => {
   resetInterval();
 });
 
-/* Init */
+/* 視窗尺寸變化時自動重新適配（保留完整圖） */
+window.addEventListener("resize", () => {
+  slides.forEach(slide => {
+    slide.style.backgroundSize = "contain";
+  });
+});
+
+/* 初始化 */
 loadImagesFromGitHub();
 </script>
 
