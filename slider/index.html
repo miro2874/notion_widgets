@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GitHub Auto Image Slider</title>
+<title>GitHub Auto Image Slider (No Crop)</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
@@ -21,42 +21,53 @@ body {
   color: #e5ebf3;
 }
 
+/* Slider container */
 .slider {
   position: relative;
   width: 100vw;
   height: 100vh;
+  background-color: #362a2b;
   overflow: hidden;
 }
 
+/* Slide */
 .slide {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 0.4s ease-in-out;
-  background-position: center top;
-  background-size: cover;
+  transition: opacity 0.5s ease-in-out;
+
+  /* 🔑 關鍵設定：不裁切 */
   background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+
+  /* 視覺穩定用 */
+  background-color: #362a2b;
 }
 
 .slide.current {
   opacity: 1;
 }
 
+/* Buttons */
 .buttons button#prev {
   position: absolute;
   top: 50%;
   left: 1rem;
+  transform: translateY(-50%);
 }
 
 .buttons button#next {
   position: absolute;
   top: 50%;
   right: 1rem;
+  transform: translateY(-50%);
 }
 
 .buttons button {
   border: 2px solid #e5ebf3;
-  background-color: transparent;
+  background-color: rgba(0,0,0,0.25);
   color: #e5ebf3;
   cursor: pointer;
   padding: 13px 15px;
@@ -66,6 +77,19 @@ body {
 .buttons button:hover {
   background-color: #e5ebf3;
   color: #362a2b;
+}
+
+/* 高解析螢幕微調（避免圖片太小） */
+@media (min-aspect-ratio: 16/9) {
+  .slide {
+    background-size: contain;
+  }
+}
+
+@media (max-aspect-ratio: 4/5) {
+  .slide {
+    background-size: contain;
+  }
 }
 </style>
 </head>
@@ -80,18 +104,18 @@ body {
 </div>
 
 <script>
-/* ========= 請修改這三個 ========= */
-const GITHUB_OWNER = "miro2874";
-const GITHUB_REPO  = "notion_widgets";
+/* ========= 必填設定 ========= */
+const GITHUB_OWNER = "你的GitHub帳號";
+const GITHUB_REPO  = "你的repo名稱";
 const IMAGE_FOLDER = "slider";
-/* ================================= */
+/* =========================== */
 
 const slider = document.getElementById("slider");
 const intervalTime = 5000;
 let slideInterval;
 let slides = [];
 
-/* 讀取 GitHub 資料夾 */
+/* 從 GitHub 讀取圖片 */
 async function loadImagesFromGitHub() {
   const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${IMAGE_FOLDER}`;
   const res = await fetch(apiUrl);
@@ -100,7 +124,7 @@ async function loadImagesFromGitHub() {
   const images = files
     .filter(file =>
       file.type === "file" &&
-      /\.(png|jpg|jpeg|webp|gif)$/i.test(file.name)
+      /\.(png|jpe?g|webp|gif)$/i.test(file.name)
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -115,7 +139,7 @@ async function loadImagesFromGitHub() {
   startAutoSlide();
 }
 
-/* 幻燈片邏輯 */
+/* Slider controls */
 function nextSlide() {
   const current = document.querySelector(".slide.current");
   current.classList.remove("current");
@@ -132,7 +156,12 @@ function startAutoSlide() {
   slideInterval = setInterval(nextSlide, intervalTime);
 }
 
-/* 按鈕事件 */
+function resetInterval() {
+  clearInterval(slideInterval);
+  slideInterval = setInterval(nextSlide, intervalTime);
+}
+
+/* Events */
 document.getElementById("next").addEventListener("click", () => {
   nextSlide();
   resetInterval();
@@ -143,12 +172,7 @@ document.getElementById("prev").addEventListener("click", () => {
   resetInterval();
 });
 
-function resetInterval() {
-  clearInterval(slideInterval);
-  slideInterval = setInterval(nextSlide, intervalTime);
-}
-
-/* 初始化 */
+/* Init */
 loadImagesFromGitHub();
 </script>
 
