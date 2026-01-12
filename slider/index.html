@@ -1,160 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Auto Folder Image Slider</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<meta charset="UTF-8">
+<title>GitHub Auto Image Slider</title>
 
-  <style>
-    @import url("https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap");
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap");
 
-    body {
-      font-family: "Lexend", sans-serif;
-      background-color: #362a2b;
-      color: #e5ebf3;
-    }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-    .slider {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-    }
+body {
+  font-family: "Lexend", sans-serif;
+  background-color: #362a2b;
+  color: #e5ebf3;
+}
 
-    .slide {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      transition: opacity 0.4s ease-in-out;
-      background-size: cover;
-      background-position: center top;
-      background-repeat: no-repeat;
-    }
+.slider {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
 
-    .slide.current {
-      opacity: 1;
-    }
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
 
-    .buttons button#prev {
-      position: absolute;
-      top: 50%;
-      left: 1rem;
-      transform: translateY(-50%);
-    }
+.slide.current {
+  opacity: 1;
+}
 
-    .buttons button#next {
-      position: absolute;
-      top: 50%;
-      right: 1rem;
-      transform: translateY(-50%);
-    }
+.buttons button#prev {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+}
 
-    .buttons button {
-      border: 2px solid #e5ebf3;
-      background-color: transparent;
-      color: #e5ebf3;
-      cursor: pointer;
-      padding: 13px 15px;
-      border-radius: 50%;
-      outline: none;
-      z-index: 10;
-    }
+.buttons button#next {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+}
 
-    .buttons button:hover {
-      background-color: #e5ebf3;
-      color: #362a2b;
-    }
-  </style>
+.buttons button {
+  border: 2px solid #e5ebf3;
+  background-color: transparent;
+  color: #e5ebf3;
+  cursor: pointer;
+  padding: 13px 15px;
+  border-radius: 50%;
+}
+
+.buttons button:hover {
+  background-color: #e5ebf3;
+  color: #362a2b;
+}
+</style>
 </head>
 
 <body>
 
-  <div class="slider" id="slider"></div>
+<div class="slider" id="slider"></div>
 
-  <div class="buttons">
-    <button id="prev"><i class="fas fa-arrow-left"></i></button>
-    <button id="next"><i class="fas fa-arrow-right"></i></button>
-  </div>
+<div class="buttons">
+  <button id="prev"><i class="fas fa-arrow-left"></i></button>
+  <button id="next"><i class="fas fa-arrow-right"></i></button>
+</div>
 
-  <script>
-    const slider = document.getElementById("slider");
-    const nextButton = document.getElementById("next");
-    const prevButton = document.getElementById("prev");
+<script>
+/* ========= 請修改這三個 ========= */
+const GITHUB_OWNER = "miro2874";
+const GITHUB_REPO  = "notion_widgets";
+const IMAGE_FOLDER = "slider";
+/* ================================= */
 
-    const auto = true;
-    const intervalTime = 5000;
-    let slideInterval;
-    let slides = [];
+const slider = document.getElementById("slider");
+const intervalTime = 5000;
+let slideInterval;
+let slides = [];
 
-    const IMAGE_FOLDER = "slider/";
-    const IMAGE_REGEX = /\.(png|jpe?g|webp)$/i;
+/* 讀取 GitHub 資料夾 */
+async function loadImagesFromGitHub() {
+  const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${IMAGE_FOLDER}`;
+  const res = await fetch(apiUrl);
+  const files = await res.json();
 
-    async function loadImagesFromFolder() {
-      const response = await fetch(IMAGE_FOLDER);
-      const text = await response.text();
+  const images = files
+    .filter(file =>
+      file.type === "file" &&
+      /\.(png|jpg|jpeg|webp|gif)$/i.test(file.name)
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, "text/html");
+  images.forEach((img, index) => {
+    const div = document.createElement("div");
+    div.className = "slide" + (index === 0 ? " current" : "");
+    div.style.backgroundImage = `url(${img.download_url})`;
+    slider.appendChild(div);
+  });
 
-      const links = [...doc.querySelectorAll("a")]
-        .map(a => a.getAttribute("href"))
-        .filter(href => IMAGE_REGEX.test(href));
+  slides = document.querySelectorAll(".slide");
+  startAutoSlide();
+}
 
-      links.forEach((file, index) => {
-        const slide = document.createElement("div");
-        slide.className = "slide";
-        if (index === 0) slide.classList.add("current");
-        slide.style.backgroundImage = `url(${IMAGE_FOLDER}${file})`;
-        slider.appendChild(slide);
-      });
+/* 幻燈片邏輯 */
+function nextSlide() {
+  const current = document.querySelector(".slide.current");
+  current.classList.remove("current");
+  (current.nextElementSibling || slides[0]).classList.add("current");
+}
 
-      slides = document.querySelectorAll(".slide");
+function prevSlide() {
+  const current = document.querySelector(".slide.current");
+  current.classList.remove("current");
+  (current.previousElementSibling || slides[slides.length - 1]).classList.add("current");
+}
 
-      if (auto && slides.length > 1) {
-        slideInterval = setInterval(nextSlide, intervalTime);
-      }
-    }
+function startAutoSlide() {
+  slideInterval = setInterval(nextSlide, intervalTime);
+}
 
-    function nextSlide() {
-      const current = document.querySelector(".slide.current");
-      current.classList.remove("current");
+/* 按鈕事件 */
+document.getElementById("next").addEventListener("click", () => {
+  nextSlide();
+  resetInterval();
+});
 
-      const next = current.nextElementSibling || slides[0];
-      next.classList.add("current");
-    }
+document.getElementById("prev").addEventListener("click", () => {
+  prevSlide();
+  resetInterval();
+});
 
-    function prevSlide() {
-      const current = document.querySelector(".slide.current");
-      current.classList.remove("current");
+function resetInterval() {
+  clearInterval(slideInterval);
+  slideInterval = setInterval(nextSlide, intervalTime);
+}
 
-      const prev = current.previousElementSibling || slides[slides.length - 1];
-      prev.classList.add("current");
-    }
-
-    nextButton.addEventListener("click", () => {
-      nextSlide();
-      resetInterval();
-    });
-
-    prevButton.addEventListener("click", () => {
-      prevSlide();
-      resetInterval();
-    });
-
-    function resetInterval() {
-      if (!auto) return;
-      clearInterval(slideInterval);
-      slideInterval = setInterval(nextSlide, intervalTime);
-    }
-
-    loadImagesFromFolder();
-  </script>
+/* 初始化 */
+loadImagesFromGitHub();
+</script>
 
 </body>
 </html>
