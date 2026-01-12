@@ -19,38 +19,35 @@ body {
   font-family: "Lexend", sans-serif;
   background-color: #362a2b;
   color: #e5ebf3;
+  overflow: hidden;
 }
 
-/* Slider container */
+/* ===== Slider ===== */
 .slider {
   position: relative;
   width: 100vw;
   height: 100vh;
-  background-color: #362a2b;
+  background-color: #1f1819; /* 圖片留白底色 */
   overflow: hidden;
 }
 
-/* Slide */
 .slide {
   position: absolute;
   inset: 0;
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
 
-  /* 🔑 關鍵設定：不裁切 */
+  /* 核心設定：不裁切 */
   background-repeat: no-repeat;
   background-position: center center;
   background-size: contain;
-
-  /* 視覺穩定用 */
-  background-color: #362a2b;
 }
 
 .slide.current {
   opacity: 1;
 }
 
-/* Buttons */
+/* ===== Buttons ===== */
 .buttons button#prev {
   position: absolute;
   top: 50%;
@@ -67,29 +64,17 @@ body {
 
 .buttons button {
   border: 2px solid #e5ebf3;
-  background-color: rgba(0,0,0,0.25);
+  background-color: rgba(0,0,0,0.2);
   color: #e5ebf3;
   cursor: pointer;
   padding: 13px 15px;
   border-radius: 50%;
+  backdrop-filter: blur(4px);
 }
 
 .buttons button:hover {
   background-color: #e5ebf3;
   color: #362a2b;
-}
-
-/* 高解析螢幕微調（避免圖片太小） */
-@media (min-aspect-ratio: 16/9) {
-  .slide {
-    background-size: contain;
-  }
-}
-
-@media (max-aspect-ratio: 4/5) {
-  .slide {
-    background-size: contain;
-  }
 }
 </style>
 </head>
@@ -108,14 +93,14 @@ body {
 const GITHUB_OWNER = "你的GitHub帳號";
 const GITHUB_REPO  = "你的repo名稱";
 const IMAGE_FOLDER = "slider";
-/* =========================== */
+/* ============================ */
 
 const slider = document.getElementById("slider");
 const intervalTime = 5000;
 let slideInterval;
 let slides = [];
 
-/* 從 GitHub 讀取圖片 */
+/* 讀取 GitHub 圖片 */
 async function loadImagesFromGitHub() {
   const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${IMAGE_FOLDER}`;
   const res = await fetch(apiUrl);
@@ -124,22 +109,22 @@ async function loadImagesFromGitHub() {
   const images = files
     .filter(file =>
       file.type === "file" &&
-      /\.(png|jpe?g|webp|gif)$/i.test(file.name)
+      /\.(png|jpg|jpeg|webp|gif)$/i.test(file.name)
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
   images.forEach((img, index) => {
-    const div = document.createElement("div");
-    div.className = "slide" + (index === 0 ? " current" : "");
-    div.style.backgroundImage = `url(${img.download_url})`;
-    slider.appendChild(div);
+    const slide = document.createElement("div");
+    slide.className = "slide" + (index === 0 ? " current" : "");
+    slide.style.backgroundImage = `url(${img.download_url})`;
+    slider.appendChild(slide);
   });
 
   slides = document.querySelectorAll(".slide");
   startAutoSlide();
 }
 
-/* Slider controls */
+/* ===== Slider Logic ===== */
 function nextSlide() {
   const current = document.querySelector(".slide.current");
   current.classList.remove("current");
@@ -161,7 +146,7 @@ function resetInterval() {
   slideInterval = setInterval(nextSlide, intervalTime);
 }
 
-/* Events */
+/* Buttons */
 document.getElementById("next").addEventListener("click", () => {
   nextSlide();
   resetInterval();
